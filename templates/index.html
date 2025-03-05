@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Genie - Free YouTube Video Downloader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Using logo.jpg -->
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}?v=1">
+    <!-- Optional: If you convert to .ico, uncomment this and comment the above line -->
+    <!-- <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.ico') }}?v=1"> -->
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <h1>YT Genie - YouTube Downloader</h1>
+    </header>
+
+    <section class="hero">
+        <h2>Download YouTube Videos Fast & Free</h2>
+        <section class="input-section">
+            <form id="videoForm">
+                <br>
+                <br>
+                <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required>
+                <br>
+                <br>
+                <button type="submit">Check</button>
+            </form>
+        </section>
+        <section id="videoInfo" class="hidden">
+            <h2 id="videoTitle"></h2>
+            <img id="videoThumbnail" src="" alt="Thumbnail">
+            <br>
+            <br>
+            <select id="formatSelect">
+                <option value="mp4">MP4 (Video)</option>
+                <option value="mp3">MP3 (Audio Only)</option>
+            </select>
+            <br>
+            <br>
+            <select id="qualitySelect" class="hidden">
+                <option value="best">Best Quality</option>
+                <option value="720p">720p</option>
+                <option value="480p">480p</option>
+                <option value="360p">360p</option>
+            </select>
+            <br>
+            <br>
+            <button id="downloadBtn" class="hidden">Download Video</button>
+            <br>
+            <br>
+            <button id="downloadPlaylistBtn" class="hidden">Download Playlist</button>
+        </section>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2>Why Choose YT Genie?</h2>
+        <div class="feature-list">
+            <div class="feature">
+                <h3>Fast Downloads</h3>
+                <p>Download videos quickly with our optimized servers.</p>
+            </div>
+            <div class="feature">
+                <h3>Multiple Formats</h3>
+                <p>Save videos in MP4, MP3, and more.</p>
+            </div>
+            <div class="feature">
+                <h3>No Sign-Up Needed</h3>
+                <p>Just paste the link and download instantly.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <ol>
+            <li>Copy the YouTube video link.</li>
+            <li>Paste it into the input box.</li>
+            <li>Choose your format and click download.</li>
+        </ol>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta">
+        <h2>Start Downloading Now</h2>
+        <a href="#videoForm" class="btn-primary">Download Now</a>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+        <p>© 2025 YT Genie. All rights reserved.</p>
+        <p>Developed by <em>Herman Rakale</em> under <em>JumpShoot Graphics</em></p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

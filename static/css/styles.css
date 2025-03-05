@@ -1,0 +1,345 @@
+/* Reset and General Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #e0e0e0; /* Grey background */
+    text-align: center;
+    padding: 0;
+    min-height: 100vh; /* Ensure body takes full height */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background-color: #333;
+    color: white;
+    padding: 15px 0;
+    font-size: 1.5em;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Hero Section */
+.hero {
+    padding: 80px 20px;
+    flex: 1; /* Allow hero section to take available space */
+}
+
+/* Styled H1 with Background */
+.header h1 {
+    font-size: 2em;
+    color: white;
+    background: #007BFF; /* Blue background */
+    padding: 15px 20px;
+    display: inline-block;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Input Section */
+.input-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    margin: 20px auto;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 2px solid #555;
+    border-radius: 5px;
+}
+
+/* Buttons */
+button {
+    margin-top: 10px;
+    padding: 12px 20px;
+    font-size: 1em;
+    color: white;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Select Dropdowns */
+select {
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 1em;
+    border: 2px solid #555;
+    border-radius: 5px;
+    width: 200px;
+}
+
+/* Video Info Section */
+#videoInfo {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    margin: 20px auto;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+#videoInfo h2 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+#videoThumbnail {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 10px;
+}
+
+/* Hide elements by default */
+.hidden {
+    display: none;
+}
+
+.progress-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 10px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+progress {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+}
+
+#progressText {
+    font-size: 1em;
+    margin-top: 5px;
+}
+
+/* Features Section */
+.features {
+    padding: 40px 20px;
+    background-color: #f5f5f5;
+}
+
+.features h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.feature-list {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.feature {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 300px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.feature h3 {
+    font-size: 1.5em;
+    color: #007BFF;
+    margin-bottom: 10px;
+}
+
+.feature p {
+    font-size: 1em;
+    color: #555;
+}
+
+/* How It Works Section */
+.how-it-works {
+    padding: 40px 20px;
+    background-color: #fff;
+}
+
+.how-it-works h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.how-it-works ol {
+    list-style-position: inside;
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.how-it-works li {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* Call to Action Section */
+.cta {
+    padding: 40px 20px;
+    background-color: #007BFF;
+    color: white;
+}
+
+.cta h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 12px 30px;
+    font-size: 1.2em;
+    color: white;
+    background-color: #0056b3;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #003d82;
+}
+
+/* Footer Section */
+.footer {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 0.9em;
+    margin-top: auto; /* Push footer to bottom */
+}
+
+.footer p {
+    margin: 5px 0;
+}
+
+.footer em {
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 1.8em;
+    }
+
+    input[type="text"] {
+        font-size: 0.9em;
+    }
+
+    button {
+        font-size: 0.9em;
+        padding: 10px 16px;
+    }
+
+    #videoInfo h2 {
+        font-size: 1.2em;
+    }
+
+    select {
+        width: 180px;
+        font-size: 0.9em;
+    }
+
+    .features h2, .how-it-works h2, .cta h2 {
+        font-size: 1.8em;
+    }
+
+    .feature {
+        max-width: 100%;
+    }
+
+    .btn-primary {
+        font-size: 1em;
+        padding: 10px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 1.5em;
+        padding: 12px 16px;
+    }
+
+    .input-section {
+        width: 95%;
+    }
+
+    input[type="text"] {
+        font-size: 0.85em;
+    }
+
+    button {
+        font-size: 0.85em;
+        padding: 10px 14px;
+    }
+
+    #videoInfo h2 {
+        font-size: 1.1em;
+    }
+
+    select {
+        width: 150px;
+        font-size: 0.85em;
+    }
+
+    .footer {
+        font-size: 0.8em;
+    }
+
+    .features h2, .how-it-works h2, .cta h2 {
+        font-size: 1.5em;
+    }
+
+    .feature h3 {
+        font-size: 1.3em;
+    }
+
+    .feature p {
+        font-size: 0.9em;
+    }
+
+    .how-it-works li {
+        font-size: 1em;
+    }
+
+    .btn-primary {
+        font-size: 0.9em;
+        padding: 8px 16px;
+    }
+}

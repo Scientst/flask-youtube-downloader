@@ -1,0 +1,5 @@
+Flask
+yt_dlp
+Flask-WTF
+Flask-SQLAlchemy
+requests
