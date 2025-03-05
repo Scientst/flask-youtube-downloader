@@ -2,5 +2,6 @@ Flask
 yt_dlp
 Flask-WTF
 Flask-SQLAlchemy
+flask-cors
 requests
 gunicorn
