@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadingSpinner.classList.remove('hidden');
         try {
-            const response = await fetch('http://127.0.0.1:5000/check_video', {
+            const response = await fetch('https://ytgenie-youtube-downloader.onrender.com/check_video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `url=${encodeURIComponent(url)}`
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch playlist titles
     async function fetchPlaylistTitles(url) {
         try {
-            const response = await fetch('http://127.0.0.1:5000/get_playlist_titles', {
+            const response = await fetch('https://ytgenie-youtube-downloader.onrender.com/get_playlist_titles', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `url=${encodeURIComponent(url)}`
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const format = formatSelect.value;
         const quality = qualitySelect.value;
-        const downloadUrl = `http://127.0.0.1:5000/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&is_playlist=${isPlaylist}`;
+        const downloadUrl = `https://ytgenie-youtube-downloader.onrender.com/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&is_playlist=${isPlaylist}`;
 
         updateProgress(0);
         cancelBtn.classList.remove('hidden');
