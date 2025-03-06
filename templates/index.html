@@ -7,17 +7,23 @@
     <meta name="description" content="Download YouTube videos and playlists easily with YTGenie. Fast, free, and no registration required!">
     <meta name="keywords" content="YouTube downloader, free YouTube download, download YouTube playlist, online video downloader">
     <meta name="author" content="YTGenie Team">
+    
+    <!-- Google Site Verification Tag -->
+    <meta name="google-site-verification" content="Qdssx6I-Bb6HiCf75FjGnpamoZZDQd1e0OnV_hmGguE" />
+   
     <!-- Open Graph (For Social Media Sharing) -->
     <meta property="og:title" content="YTGenie - Free YouTube Downloader">
     <meta property="og:description" content="Easily download YouTube videos & playlists with YTGenie!">
     <meta property="og:image" content="https://ytgenie-youtube-downloader.onrender.com/static/thumbnail.jpg">
     <meta property="og:url" content="https://ytgenie-youtube-downloader.onrender.com">
     <meta property="og:type" content="website">
+
     <!-- Twitter Card (For Better Sharing on X) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="YTGenie - Free YouTube Downloader">
     <meta name="twitter:description" content="Download YouTube videos & playlists with YTGenie for free!">
     <meta name="twitter:image" content="https://ytgenie-youtube-downloader.onrender.com/static/thumbnail.jpg">
+
     <!-- Title and Existing Tags -->
     <title>YT Genie - Free YouTube Downloader & Converter</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -34,11 +40,19 @@
       "url": "https://ytgenie-youtube-downloader.onrender.com/"
     }
     </script>
+    <!-- Google Analytics Tag -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T95FTHPWB1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-T95FTHPWB1');
+    </script>
     <!-- Adsterra Ad Script -->
     <script type='text/javascript' src='//pl26040138.effectiveratecpm.com/0b/e1/6b/0be16b72a5a403dc71ec31dc29f543cb.js'></script>
 </head>
 <body>
-    <!-- Mobile Notification -->
+    <!-- Rest of your HTML remains unchanged -->
     <div id="mobileNotification" class="mobile-notification hidden">
         <p>For a better experience, please use the desktop version of YT Genie.</p>
     </div>
@@ -87,7 +101,6 @@
                 <span id="progressText">0%</span>
             </div>
             <p id="downloadStatus" class="hidden"></p>
-            <!-- Download Queue Section -->
             <div id="downloadQueue" class="download-queue hidden">
                 <h3>Downloaded Files</h3>
                 <ul id="queueList"></ul>
@@ -113,7 +126,6 @@
         </div>
     </section>
 
-    <!-- Adsterra Ad Placement -->
     <section class="ad-section">
         <div id="adsterra-ad" class="ad-container">
             <!-- Ad content will be injected by the script -->

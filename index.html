@@ -1,92 +1,392 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google Verification Tag -->
-    <meta name="google-site-verification" content="Qdssx6I-Bb6HiCf75FjGnpamoZZDQd1e0OnV_hmGguE" />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T95FTHPWB1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        gtag('config', 'G-T95FTHPWB1');
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Download YouTube videos and playlists easily with YTGenie. Fast, free, and no registration required!">
-    <meta name="keywords" content="YouTube downloader, free YouTube download, download YouTube playlist, online video downloader">
-    <meta name="author" content="YTGenie Team">
-   
-    <!-- Open Graph (For Social Media Sharing) -->
-    <meta property="og:title" content="YTGenie - Free YouTube Downloader">
-    <meta property="og:description" content="Easily download YouTube videos & playlists with YTGenie!">
-    <meta property="og:image" content="https://ytgenie-youtube-downloader.onrender.com/static/thumbnail.jpg">
-    <meta property="og:url" content="https://ytgenie-youtube-downloader.onrender.com">
-    <meta property="og:type" content="website">
-
-    <!-- Twitter Card (For Better Sharing on X) -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="YTGenie - Free YouTube Downloader">
-    <meta name="twitter:description" content="Download YouTube videos & playlists with YTGenie for free!">
-    <meta name="twitter:image" content="https://ytgenie-youtube-downloader.onrender.com/static/thumbnail.jpg">
-
-    <!-- Title and Existing Tags -->
-    <title>YT Genie - Free YouTube Downloader & Converter</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>YT Genie - Free YouTube Video Downloader</title>
+    <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}?v=1">
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "YT Genie",
-      "operatingSystem": "Web",
-      "applicationCategory": "Utility",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "description": "YT Genie is a free YouTube video downloader and converter to MP4 or MP3.",
-      "url": "https://ytgenie-youtube-downloader.onrender.com/"
-    }
-    </script>
-    
-    <!-- Adsterra Ad Script -->
-    <script type='text/javascript' src='//pl26040138.effectiveratecpm.com/0b/e1/6b/0be16b72a5a403dc71ec31dc29f543cb.js'></script>
+    <!-- Optional: If you convert to .ico -->
+    <!-- <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.ico') }}?v=1"> -->
+
+    <style>
+        /* Reset and General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #e0e0e0;
+            text-align: center;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar (not in original HTML, but styled in CSS) */
+        .navbar {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 15px 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 80px 20px;
+            flex: 1;
+        }
+
+        /* Styled H1 with Background */
+        .header h1 {
+            font-size: 2em;
+            color: white;
+            background: #007BFF;
+            padding: 15px 20px;
+            display: inline-block;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #555;
+            border-radius: 5px;
+        }
+
+        /* Buttons */
+        button {
+            margin-top: 10px;
+            padding: 12px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Select Dropdowns */
+        select {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #555;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        /* Video Info Section */
+        #videoInfo {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        #videoInfo h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        #videoThumbnail {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+        }
+
+        /* Hide elements by default */
+        .hidden {
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        progress {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+        }
+
+        #progressText {
+            font-size: 1em;
+            margin-top: 5px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+        }
+
+        .features h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .feature-list {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature h3 {
+            font-size: 1.5em;
+            color: #007BFF;
+            margin-bottom: 10px;
+        }
+
+        .feature p {
+            font-size: 1em;
+            color: #555;
+        }
+
+        /* How It Works Section */
+        .how-it-works {
+            padding: 40px 20px;
+            background-color: #fff;
+        }
+
+        .how-it-works h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .how-it-works ol {
+            list-style-position: inside;
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .how-it-works li {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        /* Call to Action Section */
+        .cta {
+            padding: 40px 20px;
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            padding: 12px 30px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #0056b3;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s ease-in-out;
+        }
+
+        .btn-primary:hover {
+            background-color: #003d82;
+        }
+
+        /* Footer Section */
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer em {
+            font-style: italic;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8em;
+            }
+
+            input[type="text"] {
+                font-size: 0.9em;
+            }
+
+            button {
+                font-size: 0.9em;
+                padding: 10px 16px;
+            }
+
+            #videoInfo h2 {
+                font-size: 1.2em;
+            }
+
+            select {
+                width: 180px;
+                font-size: 0.9em;
+            }
+
+            .features h2, .how-it-works h2, .cta h2 {
+                font-size: 1.8em;
+            }
+
+            .feature {
+                max-width: 100%;
+            }
+
+            .btn-primary {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 1.5em;
+                padding: 12px 16px;
+            }
+
+            .input-section {
+                width: 95%;
+            }
+
+            input[type="text"] {
+                font-size: 0.85em;
+            }
+
+            button {
+                font-size: 0.85em;
+                padding: 10px 14px;
+            }
+
+            #videoInfo h2 {
+                font-size: 1.1em;
+            }
+
+            select {
+                width: 150px;
+                font-size: 0.85em;
+            }
+
+            .footer {
+                font-size: 0.8em;
+            }
+
+            .features h2, .how-it-works h2, .cta h2 {
+                font-size: 1.5em;
+            }
+
+            .feature h3 {
+                font-size: 1.3em;
+            }
+
+            .feature p {
+                font-size: 0.9em;
+            }
+
+            .how-it-works li {
+                font-size: 1em;
+            }
+
+            .btn-primary {
+                font-size: 0.9em;
+                padding: 8px 16px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Mobile Notification -->
-    <div id="mobileNotification" class="mobile-notification hidden">
-        <p>For a better experience, please use the desktop version of YT Genie.</p>
-    </div>
-
+    <!-- Header Section -->
     <header class="header">
-        <h1>YT Genie - Free YouTube Video Downloader</h1>
-        <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+        <h1>YT Genie - YouTube Downloader</h1>
     </header>
 
     <section class="hero">
-        <h2>Download YouTube Videos & Convert to MP3 Fast</h2>
+        <h2>Download YouTube Videos Fast & Free</h2>
         <section class="input-section">
             <form id="videoForm">
                 <br>
-                <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required title="Paste a valid YouTube URL here">
+                <br>
+                <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required>
                 <br>
                 <br>
-                <button type="submit" id="checkBtn" title="Check the video details">Check</button>
-                <span id="loadingSpinner" class="spinner hidden"></span>
+                <button type="submit">Check</button>
             </form>
         </section>
         <section id="videoInfo" class="hidden">
             <h2 id="videoTitle"></h2>
-            <img id="videoThumbnail" src="" alt="" loading="lazy">
+            <img id="videoThumbnail" src="" alt="Thumbnail">
             <br>
             <br>
-            <select id="formatSelect" title="Choose download format">
+            <select id="formatSelect">
                 <option value="mp4">MP4 (Video)</option>
                 <option value="mp3">MP3 (Audio Only)</option>
             </select>
             <br>
             <br>
-            <select id="qualitySelect" class="hidden" title="Select video quality">
+            <select id="qualitySelect" class="hidden">
                 <option value="best">Best Quality</option>
                 <option value="720p">720p</option>
                 <option value="480p">480p</option>
@@ -94,66 +394,243 @@
             </select>
             <br>
             <br>
-            <button id="downloadBtn" class="hidden" title="Download the video">Download Video</button>
-            <button id="downloadPlaylistBtn" class="hidden" title="Download entire playlist">Download Playlist</button>
-            <button id="cancelBtn" class="hidden" title="Cancel download">Cancel</button>
-            <div class="progress-container hidden">
-                <progress id="downloadProgress" value="0" max="100"></progress>
-                <span id="progressText">0%</span>
-            </div>
-            <p id="downloadStatus" class="hidden"></p>
-            <!-- Download Queue Section -->
-            <div id="downloadQueue" class="download-queue hidden">
-                <h3>Downloaded Files</h3>
-                <ul id="queueList"></ul>
-            </div>
+            <button id="downloadBtn" class="hidden">Download Video</button>
+            <br>
+            <br>
+            <button id="downloadPlaylistBtn" class="hidden">Download Playlist</button>
         </section>
     </section>
 
+    <!-- Features Section -->
     <section class="features">
-        <h2>Why Choose YT Genie for YouTube Downloads?</h2>
+        <h2>Why Choose YT Genie?</h2>
         <div class="feature-list">
             <div class="feature">
-                <h3>Fast YouTube Downloads</h3>
-                <p>Download YouTube videos quickly with our optimized servers. Enjoy high-speed conversions to MP4 or MP3.</p>
+                <h3>Fast Downloads</h3>
+                <p>Download videos quickly with our optimized servers.</p>
             </div>
             <div class="feature">
-                <h3>Multiple Formats Available</h3>
-                <p>Convert YouTube videos to MP4, MP3, and more with this free YouTube downloader.</p>
+                <h3>Multiple Formats</h3>
+                <p>Save videos in MP4, MP3, and more.</p>
             </div>
             <div class="feature">
-                <h3>No Sign-Up Required</h3>
-                <p>Use our YouTube video downloader instantly—no account needed. Paste the link and start downloading!</p>
+                <h3>No Sign-Up Needed</h3>
+                <p>Just paste the link and download instantly.</p>
             </div>
         </div>
     </section>
 
-    <!-- Adsterra Ad Placement -->
-    <section class="ad-section">
-        <div id="adsterra-ad" class="ad-container">
-            <!-- Ad content will be injected by the script -->
-        </div>
-    </section>
-
+    <!-- How It Works Section -->
     <section class="how-it-works">
-        <h2>How to Use YT Genie YouTube Downloader</h2>
+        <h2>How It Works</h2>
         <ol>
-            <li>Copy the YouTube video or playlist link.</li>
-            <li>Paste it into the input box above.</li>
-            <li>Choose your format (MP4 or MP3) and click download.</li>
+            <li>Copy the YouTube video link.</li>
+            <li>Paste it into the input box.</li>
+            <li>Choose your format and click download.</li>
         </ol>
     </section>
 
+    <!-- Call to Action -->
     <section class="cta">
-        <h2>Start Downloading YouTube Videos Now</h2>
-        <a href="#videoForm" class="btn-primary" title="Go to download section">Download Now</a>
+        <h2>Start Downloading Now</h2>
+        <a href="#videoForm" class="btn-primary">Download Now</a>
     </section>
 
+    <!-- Footer Section -->
     <footer class="footer">
         <p>© 2025 YT Genie. All rights reserved.</p>
         <p>Developed by <em>Herman Rakale</em> under <em>JumpShoot Graphics</em></p>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoForm = document.getElementById('videoForm');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadPlaylistBtn = document.getElementById('downloadPlaylistBtn');
+            const formatSelect = document.getElementById('formatSelect');
+            const qualitySelect = document.getElementById('qualitySelect');
+
+            if (!videoForm || !downloadBtn || !downloadPlaylistBtn || !formatSelect || !qualitySelect) {
+                console.error('One or more elements not found:', {
+                    videoForm, downloadBtn, downloadPlaylistBtn, formatSelect, qualitySelect
+                });
+            } else {
+                console.log('All required elements found');
+            }
+
+            // Show/hide quality select based on format
+            formatSelect.addEventListener('change', () => {
+                if (formatSelect.value === 'mp4') {
+                    qualitySelect.classList.remove('hidden');
+                } else {
+                    qualitySelect.classList.add('hidden');
+                }
+            });
+
+            videoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('Form submitted');
+                
+                const url = document.getElementById('url').value;
+                const videoInfo = document.getElementById('videoInfo');
+                const videoTitle = document.getElementById('videoTitle');
+                const videoThumbnail = document.getElementById('videoThumbnail');
+
+                console.log('Fetching video info for:', url);
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/check_video', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `url=${encodeURIComponent(url)}`
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Response data:', data);
+                    
+                    if (data.success) {
+                        videoTitle.textContent = data.title;
+                        videoThumbnail.src = data.thumbnail;
+                        videoInfo.classList.remove('hidden');
+                        videoInfo.style.display = 'block';
+                        
+                        if (data.is_playlist) {
+                            downloadPlaylistBtn.classList.remove('hidden');
+                            downloadBtn.classList.add('hidden');
+                            qualitySelect.classList.add('hidden');
+                        } else {
+                            downloadBtn.classList.remove('hidden');
+                            downloadPlaylistBtn.classList.add('hidden');
+                            if (formatSelect.value === 'mp4') {
+                                qualitySelect.classList.remove('hidden');
+                            }
+                        }
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    alert('An error occurred: ' + error.message);
+                }
+            });
+
+            // Direct download in the browser
+            function triggerDownload(url, isPlaylist) {
+                const format = formatSelect.value;
+                const quality = qualitySelect.value;
+                const downloadUrl = `http://127.0.0.1:5000/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&is_playlist=${isPlaylist}`;
+                console.log('Triggering download:', downloadUrl);
+
+                // Open the download link in a new tab
+                window.open(downloadUrl, '_blank');
+            }
+
+            downloadBtn.addEventListener('click', () => {
+                const url = document.getElementById('url').value;
+                console.log('Downloading single video:', url);
+                triggerDownload(url, false);
+            });
+
+            downloadPlaylistBtn.addEventListener('click', () => {
+                const url = document.getElementById('url').value;
+                console.log('Downloading playlist:', url);
+                triggerDownload(url, true);
+            });
+        });
+    </script>
+
+    <!-- Flask Python Code (Commented Out - Must be in a separate .py file to run) -->
+    <!--
+    from flask import Flask, request, jsonify, render_template, send_file
+    from flask_cors import CORS
+    import yt_dlp
+    import os
+
+    app = Flask(__name__)
+    CORS(app)
+
+    @app.route('/')
+    def index():
+        return render_template('index.html')
+
+    @app.route('/check_video', methods=['POST'])
+    def check_video():
+        url = request.form.get('url')
+        print(f"Checking video info for URL: {url}")
+        
+        try:
+            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+                info = ydl.extract_info(url, download=False)
+                
+                if 'entries' in info:
+                    is_playlist = True
+                    title = info['title']
+                    thumbnail = info['entries'][0]['thumbnail']
+                else:
+                    is_playlist = False
+                    title = info['title']
+                    thumbnail = info['thumbnail']
+                    
+                return jsonify({
+                    'success': True,
+                    'title': title,
+                    'thumbnail': thumbnail,
+                    'is_playlist': is_playlist
+                })
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+
+    @app.route('/download', methods=['GET'])
+    def download():
+        url = request.args.get('url')
+        format_type = request.args.get('format', 'mp4')
+        quality = request.args.get('quality', 'best')
+        
+        if not url:
+            return jsonify({'success': False, 'error': 'No URL provided'}), 400
+
+        ydl_opts = {
+            'outtmpl': 'downloads/%(title)s.%(ext)s',
+        }
+
+        if format_type == 'mp3':
+            ydl_opts.update({
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            })
+        else:
+            if quality == 'best':
+                ydl_opts['format'] = 'bestvideo+bestaudio/best'
+            else:
+                ydl_opts['format'] = f'bestvideo[height<={quality[:-1]}]+bestaudio/best'
+            ydl_opts['merge_output_format'] = 'mp4'
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+                if format_type == 'mp3':
+                    filename = filename.rsplit('.', 1)[0] + '.mp3'
+
+            return send_file(filename, as_attachment=True)
+
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+
+    if __name__ == '__main__':
+        if not os.path.exists('downloads'):
+            os.makedirs('downloads')
+        app.run(debug=True)
+    -->
 </body>
 </html>
