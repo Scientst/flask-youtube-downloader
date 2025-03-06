@@ -20,6 +20,27 @@ body.dark-mode {
     color: #ecf0f1;
 }
 
+/* Mobile Notification */
+.mobile-notification {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 215, 0, 0.9);
+    color: #333;
+    padding: 10px 20px;
+    border-radius: 8px;
+    z-index: 2000;
+    text-align: center;
+    font-size: 1em;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .mobile-notification {
+    background: rgba(241, 196, 15, 0.9);
+    color: #ecf0f1;
+}
+
 /* Header */
 .header {
     position: sticky;
@@ -128,6 +149,14 @@ button:hover {
 
 #cancelBtn:hover {
     background: linear-gradient(90deg, #c0392b, #a93226);
+}
+
+#downloadPlaylistBtn {
+    margin-left: 10px;
+}
+
+#videoInfo button {
+    margin: 10px 5px;
 }
 
 /* Spinner */
@@ -248,6 +277,65 @@ body.dark-mode #progressText {
 }
 
 body.dark-mode #downloadStatus {
+    color: #2ecc71;
+}
+
+/* Download Queue */
+.download-queue {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .download-queue {
+    background: rgba(44, 62, 80, 0.9);
+}
+
+.download-queue h3 {
+    font-size: 1.5em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+body.dark-mode .download-queue h3 {
+    color: #ecf0f1;
+}
+
+#queueList {
+    list-style: none;
+    text-align: left;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#queueList li {
+    padding: 8px;
+    font-size: 1em;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+}
+
+body.dark-mode #queueList li {
+    color: #bdc3c7;
+    border-bottom: 1px solid #555;
+}
+
+#queueList li.downloading {
+    color: #007BFF;
+    font-weight: bold;
+}
+
+#queueList li.completed {
+    color: #28a745;
+}
+
+body.dark-mode #queueList li.downloading {
+    color: #00c4cc;
+}
+
+body.dark-mode #queueList li.completed {
     color: #2ecc71;
 }
 

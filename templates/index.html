@@ -8,6 +8,11 @@
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}?v=1">
 </head>
 <body>
+    <!-- Mobile Notification -->
+    <div id="mobileNotification" class="mobile-notification hidden">
+        <p>For a better experience, please use the desktop version of YT Genie.</p>
+    </div>
+
     <header class="header">
         <h1>YT Genie - YouTube Downloader</h1>
         <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
@@ -51,7 +56,12 @@
                 <progress id="downloadProgress" value="0" max="100"></progress>
                 <span id="progressText">0%</span>
             </div>
-            <p id="downloadStatus" class="hidden">Download started!</p>
+            <p id="downloadStatus" class="hidden"></p>
+            <!-- Download Queue Section -->
+            <div id="downloadQueue" class="download-queue hidden">
+                <h3>Downloaded Files</h3>
+                <ul id="queueList"></ul>
+            </div>
         </section>
     </section>
 
