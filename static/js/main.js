@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cancelDownload = false;
     let videoTitles = [];
 
-    // Mobile Detection and Notification
+    // Mobile Detection and Notification (optional: comment out if mobile UX is fine)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
         mobileNotification.classList.remove('hidden');
@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 videoTitle.textContent = data.title;
                 videoThumbnail.src = data.thumbnail;
+                videoThumbnail.alt = `Thumbnail for ${data.title}`; // SEO: descriptive alt text
                 videoInfo.classList.remove('hidden');
                 videoInfo.style.display = 'block';
 
@@ -71,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 downloadQueue.classList.add('hidden');
                 queueList.innerHTML = '';
 
-                // Store video titles for queue
                 videoTitles = data.is_playlist ? await fetchPlaylistTitles(url) : [data.title];
             } else {
                 alert(`Error: ${data.error || 'Unable to fetch video info'}`);
