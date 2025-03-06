@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YT Genie - Free YouTube Video Downloader</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <!-- Using logo.jpg -->
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}?v=1">
-    <!-- Optional: If you convert to .ico, uncomment this and comment the above line -->
-    <!-- <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.ico') }}?v=1"> -->
 </head>
 <body>
-    <!-- Header Section -->
     <header class="header">
         <h1>YT Genie - YouTube Downloader</h1>
+        <button id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
     </header>
 
     <section class="hero">
@@ -21,11 +18,11 @@
         <section class="input-section">
             <form id="videoForm">
                 <br>
+                <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required title="Paste a valid YouTube URL here">
                 <br>
-                <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required>
                 <br>
-                <br>
-                <button type="submit">Check</button>
+                <button type="submit" id="checkBtn" title="Check the video details">Check</button>
+                <span id="loadingSpinner" class="spinner hidden"></span>
             </form>
         </section>
         <section id="videoInfo" class="hidden">
@@ -33,13 +30,13 @@
             <img id="videoThumbnail" src="" alt="Thumbnail">
             <br>
             <br>
-            <select id="formatSelect">
+            <select id="formatSelect" title="Choose download format">
                 <option value="mp4">MP4 (Video)</option>
                 <option value="mp3">MP3 (Audio Only)</option>
             </select>
             <br>
             <br>
-            <select id="qualitySelect" class="hidden">
+            <select id="qualitySelect" class="hidden" title="Select video quality">
                 <option value="best">Best Quality</option>
                 <option value="720p">720p</option>
                 <option value="480p">480p</option>
@@ -47,14 +44,17 @@
             </select>
             <br>
             <br>
-            <button id="downloadBtn" class="hidden">Download Video</button>
-            <br>
-            <br>
-            <button id="downloadPlaylistBtn" class="hidden">Download Playlist</button>
+            <button id="downloadBtn" class="hidden" title="Download the video">Download Video</button>
+            <button id="downloadPlaylistBtn" class="hidden" title="Download entire playlist">Download Playlist</button>
+            <button id="cancelBtn" class="hidden" title="Cancel download">Cancel</button>
+            <div class="progress-container hidden">
+                <progress id="downloadProgress" value="0" max="100"></progress>
+                <span id="progressText">0%</span>
+            </div>
+            <p id="downloadStatus" class="hidden">Download started!</p>
         </section>
     </section>
 
-    <!-- Features Section -->
     <section class="features">
         <h2>Why Choose YT Genie?</h2>
         <div class="feature-list">
@@ -73,7 +73,6 @@
         </div>
     </section>
 
-    <!-- How It Works Section -->
     <section class="how-it-works">
         <h2>How It Works</h2>
         <ol>
@@ -83,13 +82,11 @@
         </ol>
     </section>
 
-    <!-- Call to Action -->
     <section class="cta">
         <h2>Start Downloading Now</h2>
-        <a href="#videoForm" class="btn-primary">Download Now</a>
+        <a href="#videoForm" class="btn-primary" title="Go to download section">Download Now</a>
     </section>
 
-    <!-- Footer Section -->
     <footer class="footer">
         <p>© 2025 YT Genie. All rights reserved.</p>
         <p>Developed by <em>Herman Rakale</em> under <em>JumpShoot Graphics</em></p>
