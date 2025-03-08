@@ -5,7 +5,6 @@ import os
 import time
 import re
 import zipfile
-import shutil
 
 app = Flask(__name__)
 CORS(app)
@@ -42,7 +41,7 @@ def check_video():
     print(f"Checking video info for URL: {url}")
     
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}) as ydl:
             info = ydl.extract_info(url, download=False)
             
             if 'entries' in info:
@@ -60,6 +59,10 @@ def check_video():
                 'thumbnail': thumbnail,
                 'is_playlist': is_playlist
             })
+    except yt_dlp.utils.DownloadError as e:
+        if "Sign in to confirm" in str(e):
+            return jsonify({'success': False, 'error': 'This video or playlist requires authentication. Please try a different URL.'})
+        return jsonify({'success': False, 'error': str(e)})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -67,12 +70,16 @@ def check_video():
 def get_playlist_titles():
     url = request.form.get('url')
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
                 titles = [entry['title'] for entry in info['entries']]
                 return jsonify({'success': True, 'titles': titles})
             return jsonify({'success': False, 'error': 'Not a playlist'})
+    except yt_dlp.utils.DownloadError as e:
+        if "Sign in to confirm" in str(e):
+            return jsonify({'success': False, 'error': 'This playlist requires authentication. Please try a different URL.'})
+        return jsonify({'success': False, 'error': str(e)})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -113,6 +120,7 @@ def download():
         'progress_hooks': [download_progress_hook],
         'retries': 3,
         'fragment_retries': 3,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',  # Added User-Agent
     }
 
     if format_type == 'mp3':
@@ -137,7 +145,6 @@ def download():
             if is_playlist and 'entries' in info:
                 files = []
                 for entry in info['entries']:
-                    # Use the actual downloaded filename from yt_dlp
                     filename = entry.get('_filename', ydl.prepare_filename(entry))
                     if format_type == 'mp3':
                         filename = filename.rsplit('.', 1)[0] + '.mp3'
@@ -188,12 +195,15 @@ def download():
                 )
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitized_filename}"'
                 return response
+    except yt_dlp.utils.DownloadError as e:
+        if "Sign in to confirm" in str(e):
+            return jsonify({'success': False, 'error': 'This video or playlist requires authentication. Please try a different URL or ensure it’s publicly accessible.'}), 403
+        return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         error_msg = str(e)
         print(f"Download error: {error_msg}")
         return jsonify({'success': False, 'error': error_msg}), 500
     finally:
-        # Clean up all files in download_dir
         if os.path.exists(download_dir):
             for file in os.listdir(download_dir):
                 file_path = os.path.join(download_dir, file)
@@ -202,7 +212,6 @@ def download():
                         os.remove(file_path)
                 except Exception as e:
                     print(f"Failed to remove file {file_path}: {e}")
-            # Optionally remove the directory if empty
             try:
                 os.rmdir(download_dir)
             except:
