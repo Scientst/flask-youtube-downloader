@@ -5,9 +5,17 @@ import os
 import time
 import re
 import zipfile
+import logging
 
 app = Flask(__name__)
 CORS(app)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Path to cookies file (assumed in project root)
+COOKIES_FILE = 'youtube_cookies.txt'
 
 @app.route('/')
 def index():
@@ -38,21 +46,28 @@ def sitemap():
 @app.route('/check_video', methods=['POST'])
 def check_video():
     url = request.form.get('url')
-    print(f"Checking video info for URL: {url}")
+    logger.info(f"Checking video info for URL: {url}")
     
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+        }
+        if os.path.exists(COOKIES_FILE):
+            ydl_opts['cookiefile'] = COOKIES_FILE
+            logger.info(f"Using cookies from {COOKIES_FILE}")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            
             if 'entries' in info:
                 is_playlist = True
                 title = info['title']
-                thumbnail = info['entries'][0]['thumbnail']
+                thumbnail = info['entries'][0]['thumbnail'] if info['entries'] else ''
             else:
                 is_playlist = False
                 title = info['title']
                 thumbnail = info['thumbnail']
                 
+            logger.info(f"Video check successful: {title}, Playlist: {is_playlist}")
             return jsonify({
                 'success': True,
                 'title': title,
@@ -60,32 +75,39 @@ def check_video():
                 'is_playlist': is_playlist
             })
     except Exception as e:
+        logger.error(f"Check video failed: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/get_playlist_titles', methods=['POST'])
 def get_playlist_titles():
     url = request.form.get('url')
+    logger.info(f"Fetching playlist titles for URL: {url}")
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+        }
+        if os.path.exists(COOKIES_FILE):
+            ydl_opts['cookiefile'] = COOKIES_FILE
+            logger.info(f"Using cookies from {COOKIES_FILE}")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
-                titles = [entry['title'] for entry in info['entries']]
+                titles = [entry['title'] for entry in info['entries'] if entry]
+                logger.info(f"Playlist titles fetched: {len(titles)} titles")
                 return jsonify({'success': True, 'titles': titles})
             return jsonify({'success': False, 'error': 'Not a playlist'})
     except Exception as e:
+        logger.error(f"Get playlist titles failed: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 def download_progress_hook(d):
     if d['status'] == 'finished':
-        print(f"Finished downloading: {d['filename']}")
+        logger.info(f"Download finished: {d.get('filename', 'Unknown')}")
+    elif d['status'] == 'downloading':
+        logger.debug(f"Downloading: {d.get('filename', 'Unknown')} - {d.get('downloaded_bytes', 0)} bytes")
     elif d['status'] == 'error':
-        print(f"Error during download: {d.get('error')}")
-        part_file = d.get('filename', '') + '.part'
-        if os.path.exists(part_file):
-            try:
-                os.remove(part_file)
-            except Exception as e:
-                print(f"Failed to remove partial file: {e}")
+        logger.error(f"Download error: {d.get('error', 'Unknown error')}")
 
 def sanitize_filename(filename):
     filename = re.sub(r'[^\x00-\x7F]+', '_', filename)
@@ -100,19 +122,27 @@ def download():
     is_playlist = request.args.get('is_playlist', 'false') == 'true'
 
     if not url:
+        logger.error("No URL provided")
         return jsonify({'success': False, 'error': 'No URL provided'}), 400
 
     download_dir = 'downloads'
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
+        logger.info(f"Created download directory: {download_dir}")
 
     ydl_opts = {
         'outtmpl': f'{download_dir}/%(title)s.%(ext)s',
         'noplaylist': not is_playlist,
         'progress_hooks': [download_progress_hook],
-        'retries': 3,
-        'fragment_retries': 3,
+        'retries': 10,
+        'fragment_retries': 10,
+        'quiet': True,
+        'no_warnings': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     }
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+        logger.info(f"Using cookies from {COOKIES_FILE}")
 
     if format_type == 'mp3':
         ydl_opts.update({
@@ -130,59 +160,65 @@ def download():
             ydl_opts['format'] = f'bestvideo[height<={quality[:-1]}]+bestaudio/best'
         ydl_opts['merge_output_format'] = 'mp4'
 
+    downloaded_files = []
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            logger.info(f"Starting download for URL: {url}, Playlist: {is_playlist}")
             info = ydl.extract_info(url, download=True)
+            logger.info("Download completed, processing files")
+
             if is_playlist and 'entries' in info:
                 files = []
                 for entry in info['entries']:
-                    filename = ydl.prepare_filename(entry)
+                    if not entry:
+                        logger.warning("Skipping invalid playlist entry")
+                        continue
+                    filename = entry.get('requested_downloads', [{}])[0].get('filepath') or ydl.prepare_filename(entry)
                     if format_type == 'mp3':
                         filename = filename.rsplit('.', 1)[0] + '.mp3'
                     if os.path.exists(filename):
                         files.append(filename)
-                
+                        downloaded_files.append(filename)
+                        logger.info(f"Added to playlist: {filename}")
+                    else:
+                        logger.warning(f"File not found for playlist entry: {filename}")
+
                 if not files:
-                    raise Exception("No files downloaded for playlist")
-                
+                    raise Exception("No files were downloaded for the playlist. The content may be restricted or unavailable.")
+
                 zip_filename = f"{download_dir}/playlist_{int(time.time())}.zip"
                 with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     for file in files:
                         zipf.write(file, os.path.basename(file))
-                
+                        logger.info(f"Zipped file: {file}")
+                downloaded_files.append(zip_filename)
+
+                logger.info(f"Sending playlist ZIP: {zip_filename}")
                 response = send_file(
                     zip_filename,
                     as_attachment=True,
                     mimetype='application/zip'
                 )
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitize_filename(os.path.basename(zip_filename))}"'
-                
-                for file in files:
-                    try:
-                        os.remove(file)
-                    except:
-                        pass
                 return response
             else:
-                filename = ydl.prepare_filename(info)
+                filename = info.get('requested_downloads', [{}])[0].get('filepath') or ydl.prepare_filename(info)
                 if format_type == 'mp3':
                     filename = filename.rsplit('.', 1)[0] + '.mp3'
 
-                for _ in range(5):
-                    if os.path.exists(filename):
-                        try:
-                            with open(filename, 'rb') as f:
-                                f.read(1)
-                            break
-                        except IOError:
-                            time.sleep(1)
-                    else:
-                        time.sleep(1)
+                for _ in range(10):
+                    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+                        logger.info(f"File ready: {filename}")
+                        break
+                    logger.debug(f"Waiting for file: {filename}")
+                    time.sleep(1)
 
-                if not os.path.exists(filename):
-                    raise Exception("File not found after download")
+                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                    raise Exception(f"File not found or empty: {filename}")
 
+                downloaded_files.append(filename)
                 sanitized_filename = sanitize_filename(os.path.basename(filename))
+                logger.info(f"Sending single file: {filename}")
                 response = send_file(
                     filename,
                     as_attachment=True,
@@ -190,21 +226,30 @@ def download():
                 )
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitized_filename}"'
                 return response
+    except yt_dlp.utils.DownloadError as e:
+        error_msg = str(e)
+        logger.error(f"yt_dlp error: {error_msg}")
+        if "Sign in to confirm" in error_msg:
+            return jsonify({'success': False, 'error': 'Authentication required. Please check if the cookies file is valid and up-to-date.'}), 403
+        return jsonify({'success': False, 'error': error_msg}), 500
     except Exception as e:
-        for ext in ['.part', '.f398.mp4', '.f251.webm']:
-            temp_file = (filename + ext if 'filename' in locals() else f'{download_dir}/temp{ext}')
-            if os.path.exists(temp_file):
-                try:
-                    os.remove(temp_file)
-                except:
-                    pass
-        return jsonify({'success': False, 'error': str(e)}), 500
+        error_msg = str(e)
+        logger.error(f"General error: {error_msg}")
+        return jsonify({'success': False, 'error': error_msg}), 500
     finally:
-        if 'zip_filename' in locals() and os.path.exists(zip_filename):
+        for file in downloaded_files:
+            if os.path.exists(file):
+                try:
+                    os.remove(file)
+                    logger.info(f"Cleaned up: {file}")
+                except Exception as e:
+                    logger.error(f"Failed to remove {file}: {e}")
+        if os.path.exists(download_dir) and not os.listdir(download_dir):
             try:
-                os.remove(zip_filename)
-            except:
-                pass
+                os.rmdir(download_dir)
+                logger.info(f"Removed empty directory: {download_dir}")
+            except Exception as e:
+                logger.error(f"Failed to remove {download_dir}: {e}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
