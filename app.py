@@ -48,35 +48,42 @@ def check_video():
     url = request.form.get('url')
     logger.info(f"Checking video info for URL: {url}")
     
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,  # Use flat extraction for playlists to avoid deep processing here
+    }
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+        logger.info(f"Using cookies from {COOKIES_FILE}")
+
     try:
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-        }
-        if os.path.exists(COOKIES_FILE):
-            ydl_opts['cookiefile'] = COOKIES_FILE
-            logger.info(f"Using cookies from {COOKIES_FILE}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
                 is_playlist = True
-                title = info['title']
-                thumbnail = info['entries'][0]['thumbnail'] if info['entries'] else ''
+                title = info.get('title', 'Untitled Playlist')
+                # Use the first valid entry's thumbnail, or a fallback
+                thumbnail = next((entry.get('thumbnail') for entry in info['entries'] if entry and entry.get('thumbnail')), '')
+                logger.info(f"Playlist detected: {title}, {len(info['entries'])} entries")
             else:
                 is_playlist = False
-                title = info['title']
-                thumbnail = info['thumbnail']
-                
-            logger.info(f"Video check successful: {title}, Playlist: {is_playlist}")
+                title = info.get('title', 'Untitled Video')
+                thumbnail = info.get('thumbnail', '')
+                logger.info(f"Single video detected: {title}")
+
             return jsonify({
                 'success': True,
                 'title': title,
                 'thumbnail': thumbnail,
                 'is_playlist': is_playlist
             })
+    except yt_dlp.utils.DownloadError as e:
+        logger.error(f"DownloadError in check_video: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
-        logger.error(f"Check video failed: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
+        logger.error(f"Unexpected error in check_video: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to process URL. The playlist may contain restricted or unavailable videos.'}), 500
 
 @app.route('/get_playlist_titles', methods=['POST'])
 def get_playlist_titles():
@@ -86,6 +93,7 @@ def get_playlist_titles():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
+            'extract_flat': True,  # Flat extraction for titles
         }
         if os.path.exists(COOKIES_FILE):
             ydl_opts['cookiefile'] = COOKIES_FILE
@@ -93,7 +101,7 @@ def get_playlist_titles():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
-                titles = [entry['title'] for entry in info['entries'] if entry]
+                titles = [entry.get('title', 'Untitled') for entry in info['entries'] if entry]
                 logger.info(f"Playlist titles fetched: {len(titles)} titles")
                 return jsonify({'success': True, 'titles': titles})
             return jsonify({'success': False, 'error': 'Not a playlist'})
@@ -227,15 +235,13 @@ def download():
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitized_filename}"'
                 return response
     except yt_dlp.utils.DownloadError as e:
-        error_msg = str(e)
-        logger.error(f"yt_dlp error: {error_msg}")
-        if "Sign in to confirm" in error_msg:
+        logger.error(f"yt_dlp error: {str(e)}")
+        if "Sign in to confirm" in str(e):
             return jsonify({'success': False, 'error': 'Authentication required. Please check if the cookies file is valid and up-to-date.'}), 403
-        return jsonify({'success': False, 'error': error_msg}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
-        error_msg = str(e)
-        logger.error(f"General error: {error_msg}")
-        return jsonify({'success': False, 'error': error_msg}), 500
+        logger.error(f"General error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         for file in downloaded_files:
             if os.path.exists(file):
