@@ -110,11 +110,8 @@ def download():
         'outtmpl': f'{download_dir}/%(title)s.%(ext)s',
         'noplaylist': not is_playlist,
         'progress_hooks': [download_progress_hook],
-        'retries': 10,  # Increased retries for reliability
-        'fragment_retries': 10,
-        'quiet': True,  # Suppress excessive output
-        'no_warnings': True,  # Reduce noise
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',  # Keep User-Agent
+        'retries': 3,
+        'fragment_retries': 3,
     }
 
     if format_type == 'mp3':
@@ -133,66 +130,58 @@ def download():
             ydl_opts['format'] = f'bestvideo[height<={quality[:-1]}]+bestaudio/best'
         ydl_opts['merge_output_format'] = 'mp4'
 
-    downloaded_files = []  # Track files for cleanup
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             if is_playlist and 'entries' in info:
                 files = []
                 for entry in info['entries']:
-                    if entry is None:  # Skip failed entries
-                        continue
-                    # Use the actual downloaded filename if available
-                    filename = entry.get('_filename')
-                    if not filename:
-                        filename = ydl.prepare_filename(entry)
+                    filename = ydl.prepare_filename(entry)
                     if format_type == 'mp3':
                         filename = filename.rsplit('.', 1)[0] + '.mp3'
                     if os.path.exists(filename):
                         files.append(filename)
-                        downloaded_files.append(filename)
-                    else:
-                        print(f"Warning: Expected file not found - {filename}")
-
+                
                 if not files:
-                    raise Exception("No files downloaded for playlist. The content may be restricted or unavailable.")
-
+                    raise Exception("No files downloaded for playlist")
+                
                 zip_filename = f"{download_dir}/playlist_{int(time.time())}.zip"
                 with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     for file in files:
                         zipf.write(file, os.path.basename(file))
-                downloaded_files.append(zip_filename)
-
+                
                 response = send_file(
                     zip_filename,
                     as_attachment=True,
                     mimetype='application/zip'
                 )
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitize_filename(os.path.basename(zip_filename))}"'
+                
+                for file in files:
+                    try:
+                        os.remove(file)
+                    except:
+                        pass
                 return response
             else:
-                filename = info.get('_filename')
-                if not filename:
-                    filename = ydl.prepare_filename(info)
+                filename = ydl.prepare_filename(info)
                 if format_type == 'mp3':
                     filename = filename.rsplit('.', 1)[0] + '.mp3'
 
-                # Wait for file to be fully written
-                for _ in range(10):  # Increased timeout
-                    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+                for _ in range(5):
+                    if os.path.exists(filename):
                         try:
                             with open(filename, 'rb') as f:
-                                f.read(1)  # Test file accessibility
+                                f.read(1)
                             break
                         except IOError:
                             time.sleep(1)
                     else:
                         time.sleep(1)
 
-                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                    raise Exception(f"File not found or empty after download: {filename}")
+                if not os.path.exists(filename):
+                    raise Exception("File not found after download")
 
-                downloaded_files.append(filename)
                 sanitized_filename = sanitize_filename(os.path.basename(filename))
                 response = send_file(
                     filename,
@@ -201,31 +190,21 @@ def download():
                 )
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitized_filename}"'
                 return response
-    except yt_dlp.utils.DownloadError as e:
-        error_msg = str(e)
-        if "Sign in to confirm" in error_msg:
-            return jsonify({'success': False, 'error': 'This content requires authentication. Please try a publicly accessible URL.'}), 403
-        elif "unavailable" in error_msg.lower() or "private" in error_msg.lower():
-            return jsonify({'success': False, 'error': 'The video or playlist is unavailable or private.'}), 404
-        print(f"Download error: {error_msg}")
-        return jsonify({'success': False, 'error': error_msg}), 500
     except Exception as e:
-        error_msg = str(e)
-        print(f"Unexpected error: {error_msg}")
-        return jsonify({'success': False, 'error': error_msg}), 500
-    finally:
-        # Clean up all downloaded files
-        for file in downloaded_files:
-            if os.path.exists(file):
+        for ext in ['.part', '.f398.mp4', '.f251.webm']:
+            temp_file = (filename + ext if 'filename' in locals() else f'{download_dir}/temp{ext}')
+            if os.path.exists(temp_file):
                 try:
-                    os.remove(file)
-                except Exception as e:
-                    print(f"Failed to remove file {file}: {e}")
-        if os.path.exists(download_dir) and not os.listdir(download_dir):
+                    os.remove(temp_file)
+                except:
+                    pass
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if 'zip_filename' in locals() and os.path.exists(zip_filename):
             try:
-                os.rmdir(download_dir)
-            except Exception as e:
-                print(f"Failed to remove directory {download_dir}: {e}")
+                os.remove(zip_filename)
+            except:
+                pass
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
