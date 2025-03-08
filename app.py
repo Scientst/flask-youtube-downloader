@@ -51,7 +51,7 @@ def check_video():
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': True,  # Use flat extraction for playlists to avoid deep processing here
+        'extract_flat': True,  # Keep flat extraction for stability
     }
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
@@ -63,14 +63,32 @@ def check_video():
             if 'entries' in info:
                 is_playlist = True
                 title = info.get('title', 'Untitled Playlist')
-                # Use the first valid entry's thumbnail, or a fallback
-                thumbnail = next((entry.get('thumbnail') for entry in info['entries'] if entry and entry.get('thumbnail')), '')
-                logger.info(f"Playlist detected: {title}, {len(info['entries'])} entries")
+                # Try playlist thumbnail first, then fall back to first video's thumbnail
+                thumbnail = info.get('thumbnail')  # Playlist-level thumbnail
+                if not thumbnail:
+                    # Get thumbnail from the first valid entry
+                    first_entry_url = next((entry.get('url') for entry in info['entries'] if entry and entry.get('url')), None)
+                    if first_entry_url:
+                        # Perform a deeper extraction for the first video
+                        video_opts = {
+                            'quiet': True,
+                            'no_warnings': True,
+                            'cookiefile': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None
+                        }
+                        with yt_dlp.YoutubeDL(video_opts) as ydl_video:
+                            video_info = ydl_video.extract_info(first_entry_url, download=False)
+                            thumbnail = video_info.get('thumbnail', '')
+                # Fallback to a placeholder if still no thumbnail
+                if not thumbnail:
+                    thumbnail = 'https://via.placeholder.com/150?text=No+Thumbnail'
+                logger.info(f"Playlist detected: {title}, Thumbnail: {thumbnail}")
             else:
                 is_playlist = False
                 title = info.get('title', 'Untitled Video')
                 thumbnail = info.get('thumbnail', '')
-                logger.info(f"Single video detected: {title}")
+                if not thumbnail:
+                    thumbnail = 'https://via.placeholder.com/150?text=No+Thumbnail'
+                logger.info(f"Single video detected: {title}, Thumbnail: {thumbnail}")
 
             return jsonify({
                 'success': True,
@@ -93,7 +111,7 @@ def get_playlist_titles():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'extract_flat': True,  # Flat extraction for titles
+            'extract_flat': True,
         }
         if os.path.exists(COOKIES_FILE):
             ydl_opts['cookiefile'] = COOKIES_FILE
