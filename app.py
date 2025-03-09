@@ -56,10 +56,14 @@ def check_video():
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
         logger.info(f"Using cookies from {COOKIES_FILE}")
+    else:
+        logger.warning("Cookies file not found. Some content may require authentication.")
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
+            if info is None:
+                raise Exception("No info returned. URL may be invalid or requires authentication.")
             if 'entries' in info:
                 is_playlist = True
                 title = info.get('title', 'Untitled Playlist')
@@ -97,7 +101,7 @@ def check_video():
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         logger.error(f"Unexpected error in check_video: {str(e)}")
-        return jsonify({'success': False, 'error': 'Failed to process URL.'}), 500
+        return jsonify({'success': False, 'error': 'Failed to process URL. Authentication may be required.'}), 500
 
 @app.route('/get_playlist_titles', methods=['POST'])
 def get_playlist_titles():
@@ -112,8 +116,12 @@ def get_playlist_titles():
         if os.path.exists(COOKIES_FILE):
             ydl_opts['cookiefile'] = COOKIES_FILE
             logger.info(f"Using cookies from {COOKIES_FILE}")
+        else:
+            logger.warning("Cookies file not found. Playlist extraction may fail.")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
+            if info is None:
+                raise Exception("No info returned. URL may be invalid or requires authentication.")
             if 'entries' in info:
                 titles = [entry.get('title', 'Untitled') for entry in info['entries'] if entry]
                 logger.info(f"Playlist titles fetched: {len(titles)} titles")
@@ -121,7 +129,7 @@ def get_playlist_titles():
             return jsonify({'success': False, 'error': 'Not a playlist'})
     except Exception as e:
         logger.error(f"Get playlist titles failed: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 def download_progress_hook(d):
     if d['status'] == 'finished':
@@ -168,6 +176,8 @@ def download():
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
         logger.info(f"Using cookies from {COOKIES_FILE}")
+    else:
+        logger.warning("Cookies file not found. Downloads may fail if authentication is required.")
 
     if format_type == 'mp3':
         ydl_opts.update({
@@ -191,6 +201,8 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             logger.info(f"Starting download for URL: {url}, Playlist: {is_playlist}")
             info = ydl.extract_info(url, download=True)
+            if info is None:
+                raise Exception("No download info returned. Check URL or authentication.")
             logger.info("Download process completed, processing files")
 
             if is_playlist and 'entries' in info:
@@ -277,7 +289,7 @@ def download():
     except yt_dlp.utils.DownloadError as e:
         logger.error(f"yt_dlp error: {str(e)}")
         if "Sign in to confirm" in str(e):
-            return jsonify({'success': False, 'error': 'Authentication required. Please update the cookies file.'}), 403
+            return jsonify({'success': False, 'error': 'Authentication required. Please ensure valid cookies are provided in youtube_cookies.txt.'}), 403
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         logger.error(f"General error: {str(e)}")
