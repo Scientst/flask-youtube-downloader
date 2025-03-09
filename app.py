@@ -64,11 +64,12 @@ def check_video():
             info = ydl.extract_info(url, download=False)
             if info is None:
                 raise Exception("No info returned. URL may be invalid or requires authentication.")
+            logger.debug(f"Extracted info keys: {list(info.keys())}")
             if 'entries' in info:
                 is_playlist = True
                 title = info.get('title', 'Untitled Playlist')
                 thumbnail = info.get('thumbnail')
-                if not thumbnail:
+                if not thumbnail and info.get('entries'):
                     first_entry_url = next((entry.get('url') for entry in info['entries'] if entry and entry.get('url')), None)
                     if first_entry_url:
                         video_opts = {
@@ -187,7 +188,7 @@ def download():
                 'preferredcodec': 'mp3',
                 'preferredquality': '128',  # Lower bitrate for faster conversion
             }],
-            'postprocessor_args': ['-t', '15'],  # Limit conversion to 15 seconds
+            # Removed 'postprocessor_args': ['-t', '15'] to allow full audio download
         })
     else:
         if quality == 'best':
@@ -218,7 +219,7 @@ def download():
                             filepath = filepath.rsplit('.', 1)[0] + '.mp3'
                     # Fallback to original file if MP3 conversion fails
                     orig_filepath = filepath.rsplit('.', 1)[0] + '.webm' if format_type == 'mp3' else filepath
-                    for _ in range(3):  # Reduced to 3 seconds total wait
+                    for _ in range(5):  # Increased to 5 seconds for reliability
                         if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                             break
                         elif os.path.exists(orig_filepath) and os.path.getsize(orig_filepath) > 0:
@@ -262,7 +263,7 @@ def download():
                         filepath = filepath.rsplit('.', 1)[0] + '.mp3'
                 # Fallback to original file if MP3 conversion fails
                 orig_filepath = filepath.rsplit('.', 1)[0] + '.webm' if format_type == 'mp3' else filepath
-                for _ in range(3):  # Reduced to 3 seconds total wait
+                for _ in range(5):  # Increased to 5 seconds for reliability
                     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                         logger.info(f"File ready: {filepath}")
                         break
