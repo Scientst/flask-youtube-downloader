@@ -35,7 +35,7 @@ def sitemap():
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
             <url>
                 <loc>https://ytgenie-youtube-downloader.onrender.com/</loc>
-                <lastmod>2025-03-06</lastmod>
+                <lastmod>2025-03-09</lastmod>
                 <changefreq>monthly</changefreq>
                 <priority>1.0</priority>
             </url>
@@ -163,6 +163,7 @@ def download():
         'no_warnings': True,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'ignoreerrors': True,  # Skip failed downloads in playlists
+        'ffmpeg_location': '/usr/bin/ffmpeg',  # Explicitly set FFmpeg path for Render
     }
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
@@ -176,6 +177,7 @@ def download():
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
+            'postprocessor_args': ['-timeout', '20'],  # Limit FFmpeg to 20 seconds per file
         })
     else:
         if quality == 'best':
@@ -195,14 +197,19 @@ def download():
                 files = []
                 for entry in info['entries']:
                     if not entry or 'requested_downloads' not in entry:
-                        logger.warning(f"Skipping invalid or failed playlist entry: {entry.get('title', 'Unknown')}")
+                        logger.warning(f"Skipping invalid or failed playlist entry: {entry.get('title', 'Unknown') if entry else 'No entry'}")
                         continue
-                    # Use the actual filepath from requested_downloads
                     filepath = entry['requested_downloads'][0].get('filepath')
                     if not filepath:
                         filepath = ydl.prepare_filename(entry)
                         if format_type == 'mp3':
                             filepath = filepath.rsplit('.', 1)[0] + '.mp3'
+                    # Wait briefly for FFmpeg to finish
+                    for _ in range(5):  # Reduced wait time to stay within timeout
+                        if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+                            break
+                        logger.debug(f"Waiting for file: {filepath}")
+                        time.sleep(1)
                     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                         files.append(filepath)
                         downloaded_files.append(filepath)
@@ -211,7 +218,7 @@ def download():
                         logger.warning(f"File not found or empty for entry: {filepath}")
 
                 if not files:
-                    raise Exception("No files were downloaded for the playlist. Check if the content is accessible.")
+                    raise Exception("No files were downloaded for the playlist. Check accessibility or cookies.")
 
                 zip_filename = f"{download_dir}/playlist_{int(time.time())}.zip"
                 with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -237,7 +244,7 @@ def download():
                     if format_type == 'mp3':
                         filepath = filepath.rsplit('.', 1)[0] + '.mp3'
 
-                for _ in range(10):
+                for _ in range(5):  # Reduced wait time
                     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                         logger.info(f"File ready: {filepath}")
                         break
