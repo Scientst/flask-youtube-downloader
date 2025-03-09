@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cancelDownload = false;
     let videoTitles = [];
 
-    // Mobile Detection and Notification (optional: comment out if mobile UX is fine)
+    // Mobile Detection and Notification
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
         mobileNotification.classList.remove('hidden');
@@ -60,10 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 videoTitle.textContent = data.title;
                 videoThumbnail.src = data.thumbnail;
-                videoThumbnail.alt = `Thumbnail for ${data.title}`; // SEO: descriptive alt text
+                videoThumbnail.alt = `Thumbnail for ${data.title}`;
                 videoInfo.classList.remove('hidden');
                 videoInfo.style.display = 'block';
 
+                // Show appropriate button based on playlist detection
                 downloadBtn.classList.toggle('hidden', data.is_playlist);
                 downloadPlaylistBtn.classList.toggle('hidden', !data.is_playlist);
                 qualitySelect.classList.toggle('hidden', formatSelect.value !== 'mp4');
@@ -73,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 queueList.innerHTML = '';
 
                 videoTitles = data.is_playlist ? await fetchPlaylistTitles(url) : [data.title];
+                console.log(`Is playlist: ${data.is_playlist}, Titles: ${videoTitles.length}`); // Debug
             } else {
                 alert(`Error: ${data.error || 'Unable to fetch video info'}`);
             }
