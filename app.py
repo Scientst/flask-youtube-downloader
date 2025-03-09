@@ -162,8 +162,8 @@ def download():
         'quiet': True,
         'no_warnings': True,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'ignoreerrors': True,  # Skip failed downloads in playlists
-        'ffmpeg_location': '/usr/bin/ffmpeg',  # Explicitly set FFmpeg path for Render
+        'ignoreerrors': True,
+        'ffmpeg_location': '/usr/bin/ffmpeg',
     }
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
@@ -175,9 +175,9 @@ def download():
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '192',
+                'preferredquality': '128',  # Lower bitrate for faster conversion
             }],
-            'postprocessor_args': ['-timeout', '20'],  # Limit FFmpeg to 20 seconds per file
+            'postprocessor_args': ['-t', '15'],  # Limit conversion to 15 seconds
         })
     else:
         if quality == 'best':
@@ -204,9 +204,14 @@ def download():
                         filepath = ydl.prepare_filename(entry)
                         if format_type == 'mp3':
                             filepath = filepath.rsplit('.', 1)[0] + '.mp3'
-                    # Wait briefly for FFmpeg to finish
-                    for _ in range(5):  # Reduced wait time to stay within timeout
+                    # Fallback to original file if MP3 conversion fails
+                    orig_filepath = filepath.rsplit('.', 1)[0] + '.webm' if format_type == 'mp3' else filepath
+                    for _ in range(3):  # Reduced to 3 seconds total wait
                         if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+                            break
+                        elif os.path.exists(orig_filepath) and os.path.getsize(orig_filepath) > 0:
+                            filepath = orig_filepath
+                            logger.info(f"Falling back to original file: {filepath}")
                             break
                         logger.debug(f"Waiting for file: {filepath}")
                         time.sleep(1)
@@ -243,10 +248,15 @@ def download():
                     filepath = ydl.prepare_filename(info)
                     if format_type == 'mp3':
                         filepath = filepath.rsplit('.', 1)[0] + '.mp3'
-
-                for _ in range(5):  # Reduced wait time
+                # Fallback to original file if MP3 conversion fails
+                orig_filepath = filepath.rsplit('.', 1)[0] + '.webm' if format_type == 'mp3' else filepath
+                for _ in range(3):  # Reduced to 3 seconds total wait
                     if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                         logger.info(f"File ready: {filepath}")
+                        break
+                    elif os.path.exists(orig_filepath) and os.path.getsize(orig_filepath) > 0:
+                        filepath = orig_filepath
+                        logger.info(f"Falling back to original file: {filepath}")
                         break
                     logger.debug(f"Waiting for file: {filepath}")
                     time.sleep(1)
@@ -260,7 +270,7 @@ def download():
                 response = send_file(
                     filepath,
                     as_attachment=True,
-                    mimetype='application/octet-stream' if format_type == 'mp3' else 'video/mp4'
+                    mimetype='application/octet-stream' if format_type == 'mp3' or filepath.endswith('.webm') else 'video/mp4'
                 )
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitized_filename}"'
                 return response
