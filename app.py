@@ -51,7 +51,7 @@ def check_video():
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': True,  # Keep flat extraction for stability
+        'extract_flat': True,
     }
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
@@ -63,13 +63,10 @@ def check_video():
             if 'entries' in info:
                 is_playlist = True
                 title = info.get('title', 'Untitled Playlist')
-                # Try playlist thumbnail first, then fall back to first video's thumbnail
-                thumbnail = info.get('thumbnail')  # Playlist-level thumbnail
+                thumbnail = info.get('thumbnail')
                 if not thumbnail:
-                    # Get thumbnail from the first valid entry
                     first_entry_url = next((entry.get('url') for entry in info['entries'] if entry and entry.get('url')), None)
                     if first_entry_url:
-                        # Perform a deeper extraction for the first video
                         video_opts = {
                             'quiet': True,
                             'no_warnings': True,
@@ -78,7 +75,6 @@ def check_video():
                         with yt_dlp.YoutubeDL(video_opts) as ydl_video:
                             video_info = ydl_video.extract_info(first_entry_url, download=False)
                             thumbnail = video_info.get('thumbnail', '')
-                # Fallback to a placeholder if still no thumbnail
                 if not thumbnail:
                     thumbnail = 'https://via.placeholder.com/150?text=No+Thumbnail'
                 logger.info(f"Playlist detected: {title}, Thumbnail: {thumbnail}")
@@ -101,7 +97,7 @@ def check_video():
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         logger.error(f"Unexpected error in check_video: {str(e)}")
-        return jsonify({'success': False, 'error': 'Failed to process URL. The playlist may contain restricted or unavailable videos.'}), 500
+        return jsonify({'success': False, 'error': 'Failed to process URL.'}), 500
 
 @app.route('/get_playlist_titles', methods=['POST'])
 def get_playlist_titles():
@@ -129,7 +125,8 @@ def get_playlist_titles():
 
 def download_progress_hook(d):
     if d['status'] == 'finished':
-        logger.info(f"Download finished: {d.get('filename', 'Unknown')}")
+        filename = d.get('filename') or d.get('_filename', 'Unknown')
+        logger.info(f"Download finished: {filename}")
     elif d['status'] == 'downloading':
         logger.debug(f"Downloading: {d.get('filename', 'Unknown')} - {d.get('downloaded_bytes', 0)} bytes")
     elif d['status'] == 'error':
@@ -165,6 +162,7 @@ def download():
         'quiet': True,
         'no_warnings': True,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'ignoreerrors': True,  # Skip failed downloads in playlists
     }
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
@@ -191,26 +189,29 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             logger.info(f"Starting download for URL: {url}, Playlist: {is_playlist}")
             info = ydl.extract_info(url, download=True)
-            logger.info("Download completed, processing files")
+            logger.info("Download process completed, processing files")
 
             if is_playlist and 'entries' in info:
                 files = []
                 for entry in info['entries']:
-                    if not entry:
-                        logger.warning("Skipping invalid playlist entry")
+                    if not entry or 'requested_downloads' not in entry:
+                        logger.warning(f"Skipping invalid or failed playlist entry: {entry.get('title', 'Unknown')}")
                         continue
-                    filename = entry.get('requested_downloads', [{}])[0].get('filepath') or ydl.prepare_filename(entry)
-                    if format_type == 'mp3':
-                        filename = filename.rsplit('.', 1)[0] + '.mp3'
-                    if os.path.exists(filename):
-                        files.append(filename)
-                        downloaded_files.append(filename)
-                        logger.info(f"Added to playlist: {filename}")
+                    # Use the actual filepath from requested_downloads
+                    filepath = entry['requested_downloads'][0].get('filepath')
+                    if not filepath:
+                        filepath = ydl.prepare_filename(entry)
+                        if format_type == 'mp3':
+                            filepath = filepath.rsplit('.', 1)[0] + '.mp3'
+                    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+                        files.append(filepath)
+                        downloaded_files.append(filepath)
+                        logger.info(f"Added to playlist: {filepath}")
                     else:
-                        logger.warning(f"File not found for playlist entry: {filename}")
+                        logger.warning(f"File not found or empty for entry: {filepath}")
 
                 if not files:
-                    raise Exception("No files were downloaded for the playlist. The content may be restricted or unavailable.")
+                    raise Exception("No files were downloaded for the playlist. Check if the content is accessible.")
 
                 zip_filename = f"{download_dir}/playlist_{int(time.time())}.zip"
                 with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -228,25 +229,29 @@ def download():
                 response.headers['Content-Disposition'] = f'attachment; filename="{sanitize_filename(os.path.basename(zip_filename))}"'
                 return response
             else:
-                filename = info.get('requested_downloads', [{}])[0].get('filepath') or ydl.prepare_filename(info)
-                if format_type == 'mp3':
-                    filename = filename.rsplit('.', 1)[0] + '.mp3'
+                if 'requested_downloads' not in info:
+                    raise Exception("Download failed or no file was generated.")
+                filepath = info['requested_downloads'][0].get('filepath')
+                if not filepath:
+                    filepath = ydl.prepare_filename(info)
+                    if format_type == 'mp3':
+                        filepath = filepath.rsplit('.', 1)[0] + '.mp3'
 
                 for _ in range(10):
-                    if os.path.exists(filename) and os.path.getsize(filename) > 0:
-                        logger.info(f"File ready: {filename}")
+                    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+                        logger.info(f"File ready: {filepath}")
                         break
-                    logger.debug(f"Waiting for file: {filename}")
+                    logger.debug(f"Waiting for file: {filepath}")
                     time.sleep(1)
 
-                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                    raise Exception(f"File not found or empty: {filename}")
+                if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+                    raise Exception(f"File not found or empty: {filepath}")
 
-                downloaded_files.append(filename)
-                sanitized_filename = sanitize_filename(os.path.basename(filename))
-                logger.info(f"Sending single file: {filename}")
+                downloaded_files.append(filepath)
+                sanitized_filename = sanitize_filename(os.path.basename(filepath))
+                logger.info(f"Sending single file: {filepath}")
                 response = send_file(
-                    filename,
+                    filepath,
                     as_attachment=True,
                     mimetype='application/octet-stream' if format_type == 'mp3' else 'video/mp4'
                 )
@@ -255,7 +260,7 @@ def download():
     except yt_dlp.utils.DownloadError as e:
         logger.error(f"yt_dlp error: {str(e)}")
         if "Sign in to confirm" in str(e):
-            return jsonify({'success': False, 'error': 'Authentication required. Please check if the cookies file is valid and up-to-date.'}), 403
+            return jsonify({'success': False, 'error': 'Authentication required. Please update the cookies file.'}), 403
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         logger.error(f"General error: {str(e)}")
