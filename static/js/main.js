@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadingSpinner.classList.remove('hidden');
         try {
-            const response = await fetch('https://ytgenie-youtube-downloader.onrender.com/check_video', {
+            const response = await fetch('http://localhost:5000/check_video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `url=${encodeURIComponent(url)}`
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Error: ${data.error}`);
             }
         } catch (error) {
-            alert(`An error occurred: ${error.message}. Please try again.`);
+            alert(`An error occurred: ${error.message}. Please ensure the server is running at http://localhost:5000.`);
         } finally {
             loadingSpinner.classList.add('hidden');
         }
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch playlist titles
     async function fetchPlaylistTitles(url) {
         try {
-            const response = await fetch('https://ytgenie-youtube-downloader.onrender.com/get_playlist_titles', {
+            const response = await fetch('http://localhost:5000/get_playlist_titles', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `url=${encodeURIComponent(url)}`
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const format = formatSelect.value;
         const quality = qualitySelect.value;
-        const downloadUrl = `https://ytgenie-youtube-downloader.onrender.com/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&is_playlist=${isPlaylist}`;
+        const downloadUrl = `http://localhost:5000/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&is_playlist=${isPlaylist}`;
 
         updateProgress(0);
         cancelBtn.classList.remove('hidden');
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateQueue(isPlaylist ? 0 : -1);
         notifyUser('Preparing download...');
 
-        // For mobile compatibility, use window.open or iframe
+        // Use window.open for local compatibility
         const downloadWindow = window.open(downloadUrl, '_blank');
         if (!downloadWindow) {
             alert('Please allow pop-ups to start the download.');
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Simulate progress (since we can't track it with window.open)
+        // Simulate progress
         let progress = 0;
         const progressInterval = setInterval(() => {
             progress += 10;
@@ -168,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadBtn.addEventListener('click', () => triggerDownload(document.getElementById('url').value, false));
     downloadPlaylistBtn.addEventListener('click', () => triggerDownload(document.getElementById('url').value, true));
     cancelBtn.addEventListener('click', () => {
-        // Cancel not fully supported with window.open, just reset UI
         downloadInProgress = false;
         updateProgress(0);
         cancelBtn.classList.add('hidden');
