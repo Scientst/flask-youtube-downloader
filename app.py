@@ -9,13 +9,13 @@ import logging
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for simplicity
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-COOKIES_FILE = 'youtube_cookies.txt'
+COOKIES_FILE = 'youtube_cookies.txt'  # Ensure this matches the file name exactly
 DOWNLOAD_DIR = 'downloads'
 
 def ensure_download_dir():
@@ -58,8 +58,12 @@ def check_video():
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
-        'cookiefile': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None
     }
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+        logger.info(f"Using cookies from {COOKIES_FILE}")
+    else:
+        logger.warning(f"Cookies file '{COOKIES_FILE}' not found. Authentication may fail.")
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -69,14 +73,20 @@ def check_video():
             is_playlist = 'entries' in info
             title = info.get('title', 'Untitled') if not is_playlist else info.get('title', 'Untitled Playlist')
             thumbnail = info.get('thumbnail') or (info['entries'][0].get('thumbnail') if is_playlist and info['entries'] else 'https://via.placeholder.com/150?text=No+Thumbnail')
+            logger.info(f"Video/Playlist info retrieved: {title}, Playlist: {is_playlist}")
             return jsonify({
                 'success': True,
                 'title': title,
                 'thumbnail': thumbnail,
                 'is_playlist': is_playlist
             })
+    except yt_dlp.utils.DownloadError as e:
+        logger.error(f"DownloadError in check_video: {str(e)}")
+        if "Sign in to confirm" in str(e):
+            return jsonify({'success': False, 'error': 'Authentication required. Cookies may be invalid or missing.'}), 403
+        return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
-        logger.error(f"Error in check_video: {str(e)}")
+        logger.error(f"Unexpected error in check_video: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/get_playlist_titles', methods=['POST'])
@@ -88,14 +98,19 @@ def get_playlist_titles():
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
-        'cookiefile': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None
     }
-    
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+        logger.info(f"Using cookies from {COOKIES_FILE}")
+    else:
+        logger.warning(f"Cookies file '{COOKIES_FILE}' not found.")
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
                 titles = [entry.get('title', 'Untitled') for entry in info['entries'] if entry]
+                logger.info(f"Retrieved {len(titles)} playlist titles")
                 return jsonify({'success': True, 'titles': titles})
             return jsonify({'success': False, 'error': 'Not a playlist'})
     except Exception as e:
@@ -131,9 +146,12 @@ def download():
         'quiet': True,
         'no_warnings': True,
         'ignoreerrors': True,
-        'cookiefile': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None,
-        'ffmpeg_location': '/usr/bin/ffmpeg',  # Adjust if needed
     }
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+        logger.info(f"Using cookies from {COOKIES_FILE} for download")
+    else:
+        logger.warning(f"Cookies file '{COOKIES_FILE}' not found.")
 
     if format_type == 'mp3':
         ydl_opts.update({
@@ -183,7 +201,6 @@ def download():
                     with open(zip_filename, 'rb') as f:
                         while chunk := f.read(8192):
                             yield chunk
-                    # Cleanup after streaming
                     for file in downloaded_files:
                         if os.path.exists(file):
                             os.remove(file)
@@ -213,7 +230,6 @@ def download():
                     with open(filepath, 'rb') as f:
                         while chunk := f.read(8192):
                             yield chunk
-                    # Cleanup after streaming
                     for file in downloaded_files:
                         if os.path.exists(file):
                             os.remove(file)
