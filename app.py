@@ -15,7 +15,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-COOKIES_FILE = 'youtube_cookies.txt'  # Ensure this matches the file name exactly
+COOKIES_FILE = 'youtube_cookies.txt'
 DOWNLOAD_DIR = 'downloads'
 
 def ensure_download_dir():
@@ -62,6 +62,10 @@ def check_video():
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
         logger.info(f"Using cookies from {COOKIES_FILE}")
+        # Log cookie file contents (for debugging, remove in production)
+        with open(COOKIES_FILE, 'r') as f:
+            cookie_content = f.read().strip()
+            logger.debug(f"Cookies file content (first 100 chars): {cookie_content[:100]}")
     else:
         logger.warning(f"Cookies file '{COOKIES_FILE}' not found. Authentication may fail.")
 
@@ -69,7 +73,7 @@ def check_video():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if not info:
-                raise Exception("Invalid URL or authentication required.")
+                raise Exception("Invalid URL or no info returned.")
             is_playlist = 'entries' in info
             title = info.get('title', 'Untitled') if not is_playlist else info.get('title', 'Untitled Playlist')
             thumbnail = info.get('thumbnail') or (info['entries'][0].get('thumbnail') if is_playlist and info['entries'] else 'https://via.placeholder.com/150?text=No+Thumbnail')
@@ -83,7 +87,10 @@ def check_video():
     except yt_dlp.utils.DownloadError as e:
         logger.error(f"DownloadError in check_video: {str(e)}")
         if "Sign in to confirm" in str(e):
-            return jsonify({'success': False, 'error': 'Authentication required. Cookies may be invalid or missing.'}), 403
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required. Cookies may be invalid, expired, or missing. Please update youtube_cookies.txt.'
+            }), 403
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         logger.error(f"Unexpected error in check_video: {str(e)}")
