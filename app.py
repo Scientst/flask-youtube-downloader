@@ -30,7 +30,7 @@ def index():
 @app.route('/robots.txt')
 def robots_txt():
     return Response(
-        "User-agent: *\nAllow: /\nSitemap: https://ytgenie-youtube-downloader.onrender.com/sitemap.xml",
+        "User-agent: *\nAllow: /\nSitemap: http://localhost:5000/sitemap.xml",
         mimetype="text/plain"
     )
 
@@ -40,7 +40,7 @@ def sitemap():
         '''<?xml version="1.0" encoding="UTF-8"?>
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
             <url>
-                <loc>https://ytgenie-youtube-downloader.onrender.com/</loc>
+                <loc>http://localhost:5000/</loc>
                 <lastmod>2025-03-12</lastmod>
                 <changefreq>monthly</changefreq>
                 <priority>1.0</priority>
@@ -62,7 +62,6 @@ def check_video():
     if os.path.exists(COOKIES_FILE):
         ydl_opts['cookiefile'] = COOKIES_FILE
         logger.info(f"Using cookies from {COOKIES_FILE}")
-        # Log cookie file contents (for debugging, remove in production)
         with open(COOKIES_FILE, 'r') as f:
             cookie_content = f.read().strip()
             logger.debug(f"Cookies file content (first 100 chars): {cookie_content[:100]}")
