@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const queueList = document.getElementById('queueList');
     const downloadQueue = document.getElementById('downloadQueue');
     let downloadInProgress = false;
-    let cancelDownload = false;
     let videoTitles = [];
 
     // Mobile Detection and Notification
@@ -64,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 videoInfo.classList.remove('hidden');
                 videoInfo.style.display = 'block';
 
-                // Show appropriate button based on playlist detection
                 downloadBtn.classList.toggle('hidden', data.is_playlist);
                 downloadPlaylistBtn.classList.toggle('hidden', !data.is_playlist);
                 qualitySelect.classList.toggle('hidden', formatSelect.value !== 'mp4');
@@ -74,12 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 queueList.innerHTML = '';
 
                 videoTitles = data.is_playlist ? await fetchPlaylistTitles(url) : [data.title];
-                console.log(`Is playlist: ${data.is_playlist}, Titles: ${videoTitles.length}`); // Debug
             } else {
-                alert(`Error: ${data.error || 'Unable to fetch video info'}`);
+                alert(`Error: ${data.error}`);
             }
         } catch (error) {
-            console.error('Fetch error:', error);
             alert(`An error occurred: ${error.message}. Please try again.`);
         } finally {
             loadingSpinner.classList.add('hidden');
@@ -115,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadQueue.classList.remove('hidden');
     }
 
-    // Progress update
+    // Progress update (simplified for mobile)
     function updateProgress(progress) {
         progressBar.value = progress;
         progressText.textContent = `${Math.round(progress)}%`;
@@ -131,10 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Download function
-    async function triggerDownload(url, isPlaylist) {
+    function triggerDownload(url, isPlaylist) {
         if (downloadInProgress) return;
         downloadInProgress = true;
-        cancelDownload = false;
 
         const format = formatSelect.value;
         const quality = qualitySelect.value;
@@ -144,75 +139,40 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.classList.remove('hidden');
         downloadStatus.classList.add('hidden');
         updateQueue(isPlaylist ? 0 : -1);
-        notifyUser('Download in progress...');
+        notifyUser('Preparing download...');
 
-        try {
-            const response = await fetch(downloadUrl);
-            if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
-
-            const reader = response.body.getReader();
-            const contentLength = +response.headers.get('Content-Length') || 0;
-            let receivedLength = 0;
-            const chunks = [];
-
-            let currentIndex = 0;
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done || cancelDownload) break;
-
-                chunks.push(value);
-                receivedLength += value.length;
-
-                if (contentLength) {
-                    const progress = (receivedLength / contentLength) * 100;
-                    updateProgress(progress);
-                    if (isPlaylist && progress >= 100 && currentIndex < videoTitles.length - 1) {
-                        currentIndex++;
-                        updateQueue(currentIndex);
-                        updateProgress(0);
-                    }
-                }
-            }
-
-            if (cancelDownload) {
-                updateProgress(0);
-                downloadInProgress = false;
-                cancelBtn.classList.add('hidden');
-                updateQueue(-1);
-                notifyUser('Download cancelled.', 'error');
-                return;
-            }
-
-            const blob = new Blob(chunks);
-            const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 
-                            (isPlaylist ? `playlist_${Date.now()}.${format}` : `video_${Date.now()}.${format}`);
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-
-            updateProgress(100);
-            updateQueue(isPlaylist ? videoTitles.length : -1);
-            notifyUser('Download completed successfully!', 'success');
-        } catch (error) {
-            console.error('Download error:', error);
-            alert(`Download failed: ${error.message}. ${isMobile ? 'On mobile, ensure your browser allows downloads and consider using the desktop version.' : 'Please try again.'}`);
-            updateProgress(0);
-            updateQueue(-1);
-            notifyUser(`Download failed: ${error.message}`, 'error');
-        } finally {
+        // For mobile compatibility, use window.open or iframe
+        const downloadWindow = window.open(downloadUrl, '_blank');
+        if (!downloadWindow) {
+            alert('Please allow pop-ups to start the download.');
             downloadInProgress = false;
             cancelBtn.classList.add('hidden');
+            return;
         }
+
+        // Simulate progress (since we can't track it with window.open)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 10;
+            updateProgress(progress);
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                downloadInProgress = false;
+                cancelBtn.classList.add('hidden');
+                updateQueue(isPlaylist ? videoTitles.length : -1);
+                notifyUser('Download started successfully!', 'success');
+            }
+        }, 500);
     }
 
     downloadBtn.addEventListener('click', () => triggerDownload(document.getElementById('url').value, false));
     downloadPlaylistBtn.addEventListener('click', () => triggerDownload(document.getElementById('url').value, true));
     cancelBtn.addEventListener('click', () => {
-        cancelDownload = true;
+        // Cancel not fully supported with window.open, just reset UI
+        downloadInProgress = false;
+        updateProgress(0);
+        cancelBtn.classList.add('hidden');
+        updateQueue(-1);
+        notifyUser('Download preparation cancelled.', 'error');
     });
 });
